@@ -20,8 +20,8 @@ It aims to reduce [Orion](https://juno-fx.github.io/Orion-Documentation/) site d
 - `install_dependencies.yml` - Ansible playbook to provide localhost requirements so that you can use `deploy.sh`
 - `roles/` - Contains the Orion role and its tasks
 ---
-- `install_dependencies.sh` - Local requirements setup script.
-- `deploy.sh` - Ready to use deployment script
+- `setup.sh` - Local-requirements setup script.
+- `deploy.sh` - Ready-to-use deployment script
 
 
 
