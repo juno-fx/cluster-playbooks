@@ -1,0 +1,18 @@
+- import_tasks: install_argocd.yml
+  when: install_argocd | default(false) | bool
+
+- import_tasks: deploy_app.yml
+  vars:
+    app_location: "{{ gpu_operator_argocd_app_path }}"
+  when: install_gpu_operator | default(false) | bool
+
+- import_tasks: install_nginx.yml
+  when: install_nginx_operator | default(false) | bool
+
+- name: Deploy additional Argo applications
+  include_tasks: deploy_app.yml
+  vars:
+    app_location: "{{ item }}"
+  with_items: "{{ install_argocd_apps }}"
+  when: install_argocd_apps is defined
+

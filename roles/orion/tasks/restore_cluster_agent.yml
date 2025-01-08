@@ -1,0 +1,47 @@
+- name: Check if k3s is installed on agent node
+  ansible.builtin.command: which k3s
+  register: k3s_installed
+  failed_when: false
+  changed_when: false
+
+- name: Uninstall k3s agent on worker nodes
+  ansible.builtin.command: /usr/local/bin/k3s-agent-uninstall.sh
+  when: 
+    - k3s_force_reinstall | default(false) | bool
+    - k3s_installed.rc == 0
+  register: k3s_agent_uninstall
+  failed_when:
+    - '"No such file or directory" not in k3s_agent_uninstall.msg'
+    - '"Cannot find device \"kube-ipvs0" not in k3s_agent_uninstall.stderr'
+  changed_when:
+    - '"Cannot find device \"kube-ipvs0" not in k3s_agent_uninstall.stderr'
+
+- name: Get k3s join token from master, if running as standalone agent run
+  shell: sudo cat /var/lib/rancher/k3s/server/node-token
+  register: k3sup_token
+  delegate_to: "{{ groups[k3s_cluster_server_group_name][0] }}"
+  when: hostvars[groups[k3s_cluster_server_group_name][0]]['k3sup_token'] is not defined
+
+- name: Get k3s token from master node
+  set_fact:
+    k3sup_token: "{{ hostvars[groups[k3s_cluster_server_group_name][0]]['k3sup_token'] }}"
+  when: k3sup_token is not defined
+
+- name: Prepare NVidia Docker Runtime GPU environment
+  ansible.builtin.include_tasks: prepare_gpu_environment.yml
+  when: node_type == "gpu"
+
+- name: Install Docker Runtime for CPU Environment
+  ansible.builtin.include_tasks: install_docker.yml
+  when: node_type == "cpu"
+
+- name: Join worker nodes to cluster
+  shell: >
+    k3sup join --ip {{ ansible_host }} --user {{ ansible_user }}
+    --server-ip {{ hostvars[groups[k3s_cluster_server_group_name][0]]['ansible_host'] }} --server-user {{ ansible_user }}
+    --k3s-extra-args "--node-label junovfx/node=workstation" --ssh-key {{ ansible_ssh_private_key_file }}
+  delegate_to: localhost
+  notify:
+    - Restart Docker
+  become: false
+  when: k3s_installed.rc != 0 or k3s_force_reinstall | default(false) | bool

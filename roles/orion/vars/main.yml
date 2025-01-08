@@ -1,0 +1,21 @@
+---
+# Variables for the orion role
+k3s_install_args: |
+  --disable servicelb 
+  --disable traefik
+  --kube-apiserver-arg enable-admission-plugins=PodNodeSelector
+  --node-label junovfx/node=service
+
+docker_server: "{{ docker_registry | default('https://index.docker.io/v1/') }}"
+docker_registry_secret_name: "docker-registry-credentials"
+
+namespace: "{{ k8s_namespace | default('default') }}"
+
+kubeconfig_file: "{{ k3s_kubeconfig_path }}"
+
+k3s_force_reinstall: false
+
+k3s_cluster_server_group_name: k3s_cluster_servers
+k3s_kubeconfig_path: "{{ playbook_dir }}/k3s_kubeconfig.yaml"
+
+install_argocd_apps: []

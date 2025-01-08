@@ -1,0 +1,5 @@
+- name: Apply NGINX ingress manifest
+  kubernetes.core.k8s:
+    state: present
+    src: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.0-beta.0/deploy/static/provider/baremetal/deploy.yaml
+    kubeconfig: "{{ k3s_kubeconfig_path }}"

@@ -1,0 +1,5 @@
+---
+# Default variables for the orion role
+app_name: Orion
+app_maintainer: JunoFX 
+app_purpose: Cluster Supporting Infrastructure

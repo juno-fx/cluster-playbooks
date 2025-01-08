@@ -1,0 +1,38 @@
+# if the username and password for your image registry are used, it will enable applying these
+# as a secret in your cluster.
+# docker_registry: https://index.docker.io/v1/
+docker_registry_username: dockerhub_user
+docker_registry_password: dockerhub_password
+docker_registry_secret_name: "docker-registry-credentials"
+
+# if you wish to install argocd. 
+# Only set this to a false if argocd is already present at your site elsewhere as it is required
+# for ongoing Orion deployments.
+install_argocd: true 
+# This reference deployment uses nodeports to expose the argocd instance
+argocd_nodeport_port: 30900
+
+# To install the GPU operator into your cluster, please provide the path to it as an app definition. 
+# If including GPU scheduling features, please ensure your app definition references that alongside the gpu-operator charts
+install_gpu_operator: true
+# If installing the gpu-operator, the following variable is REQUIRED:
+gpu_operator_argocd_app_path:  "/your/nvidia/gpu-operator/argocd/application.yml"
+
+# If you wish to install the nginx operator
+install_nginx_operator: true 
+
+# If you wish to install apps, list their definitions here
+install_argocd_apps: []
+    # - "/path/to/orion/production-argocd-application.yml"
+    # - "/your/other/app.yml"
+
+# # If requiring private git access, enable these argocd git values to allow syncing to your private git provider
+argocd_git_repo_prefix: https://github.com/YourOrg/
+argocd_git_token_name: your-token-name
+argocd_git_token: ghp_TokenValuesB52b52B52b52
+
+# If you need to force a removal of k3s when ensuring it in your cluster, 
+# k3s_force_reinstall: true
+
+# override role values
+# k8s_namespace: default

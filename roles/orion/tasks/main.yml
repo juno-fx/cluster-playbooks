@@ -1,0 +1,7 @@
+---
+# Tasks for the orion role
+- import_tasks: cluster.yml
+  when: deployment_scope == 'cluster'
+
+- import_tasks: supporting_apps.yml  
+  when: deployment_scope == 'apps'

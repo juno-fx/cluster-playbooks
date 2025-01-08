@@ -1,0 +1,66 @@
+- name: Create ArgoCD namespace
+  kubernetes.core.k8s:
+    name: argocd
+    api_version: v1
+    kind: Namespace
+    state: present
+    kubeconfig: "{{ kubeconfig_file }}"
+
+- name: Add ArgoCD Helm repo
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: "https://argoproj.github.io/argo-helm"
+
+- name: Deploy ArgoCD
+  kubernetes.core.helm:
+    name: argocd
+    chart_ref: argo/argo-cd
+    release_namespace: argocd
+    kubeconfig: "{{ kubeconfig_file }}"
+    wait: yes
+
+- name: Get ArgoCD admin password
+  kubernetes.core.k8s_info:
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: argocd
+    kubeconfig: "{{ kubeconfig_file }}"
+  register: argocd_secret
+
+- name: Print ArgoCD admin credentials
+  debug:
+    msg: 
+      - "Username: admin"
+      - "Password: {{ argocd_secret.resources[0].data.password | b64decode }}"
+
+- name: Write ArgoCD admin password to file on localhost
+  copy:
+    content: "{{ argocd_secret.resources[0].data.password | b64decode }}"
+    dest: "{{ playbook_dir }}/argo-password"
+  delegate_to: localhost
+
+- name: Create ArgoCD NodePort Service
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'argocd_service.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_file }}"
+
+- name: Create private repo secret
+  kubernetes.core.k8s:
+    state: present
+    kubeconfig: "{{ kubeconfig_file }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: private-repo
+        namespace: argocd
+        labels:
+          argocd.argoproj.io/secret-type: repo-creds
+      stringData:
+        type: git
+        url: "{{ argocd_git_repo_prefix }}"
+        username: "{{ argocd_git_token_name }}"
+        password: "{{ argocd_git_token }}"
+  when: argocd_git_repo_prefix is defined and argocd_git_token_name is defined and argocd_git_token is defined
+

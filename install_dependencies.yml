@@ -1,0 +1,143 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  vars:
+    temp_dir: ~/.ansible/installtmp 
+  tasks:
+    # MacOS specific tasks
+    - name: Install Homebrew (MacOS)
+      when: ansible_os_family == "Darwin"
+      shell: |
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      args:
+        creates: /usr/local/bin/brew
+      become: false
+
+    - name: Install packages with Homebrew (MacOS)
+      when: ansible_os_family == "Darwin"
+      community.general.homebrew:
+        name:
+            - python3
+            - kubectl
+            - k3sup
+        state: present
+      become: false
+
+    # Rocky Linux specific tasks
+    - name: Add Kubernetes repo (Rocky)
+      when: ansible_distribution == "Rocky"
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes repo
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        gpgcheck: yes
+        enabled: yes
+
+    - name: Install EPEL repo (Rocky)
+      when: ansible_distribution == "Rocky"
+      dnf:
+        name: epel-release
+        state: present
+
+    - name: Install packages (Rocky)
+      when: ansible_distribution == "Rocky"
+      dnf:
+        name:
+            - python3
+            - python3-pip
+            - kubectl
+        state: present
+
+    # Debian/Ubuntu specific tasks
+    - name: Install required packages (Debian/Ubuntu)
+      when: ansible_os_family == "Debian"
+      apt:
+        name:
+            - python3
+            - python3-pip
+            - apt-transport-https
+            - ca-certificates
+            - curl
+        state: present
+        update_cache: yes
+
+    - name: Add Kubernetes apt key (Debian/Ubuntu)
+      when: ansible_os_family == "Debian"
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes repository (Debian/Ubuntu)
+      when: ansible_os_family == "Debian"
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: kubernetes
+
+    - name: Install kubectl (Debian/Ubuntu)
+      when: ansible_os_family == "Debian"
+      apt:
+        name: kubectl
+        state: present
+        update_cache: yes
+
+    # Common tasks for Linux (Rocky and Debian)
+    - name: Create temp directory
+      when: ansible_os_family != "Darwin"
+      file:
+        path: "{{ temp_dir }}"
+        state: directory
+        mode: '0755'
+      become: false
+
+    - name: Download and install k3sup (Linux)
+      when: ansible_os_family != "Darwin"
+      block:
+        - name: Download k3sup
+          get_url:
+            url: https://get.k3sup.dev
+            dest: "{{ temp_dir }}/install.sh"
+            mode: '0755'
+            become: false
+
+        - name: Install k3sup
+          shell: "{{ temp_dir }}/install.sh"
+          args:
+            creates: /usr/local/bin/k3sup
+          become: false
+
+    # Common tasks for all OS type
+
+    - name: Cleanup temp directory
+      file:
+        path: "{{ temp_dir }}"
+        state: absent
+      become: false
+
+    # Verify installations
+    - name: Verify installations
+      block:
+        - name: Check Ansible version
+          command: ansible --version
+          register: ansible_ver
+          changed_when: false
+
+        - name: Check kubectl version
+          command: kubectl version --client
+          register: kubectl_ver
+          changed_when: false
+
+        - name: Check k3sup version
+          command: k3sup version
+          register: k3sup_ver
+          changed_when: false
+
+        - name: Display versions
+          debug:
+            msg:
+            - "Ansible version: {{ ansible_ver.stdout_lines[0] }}"
+            - "kubectl version: {{ kubectl_ver.stdout_lines[0] }}"
+            - "k3sup version: {{ k3sup_ver.stdout_lines[0] }}"
+          become: false

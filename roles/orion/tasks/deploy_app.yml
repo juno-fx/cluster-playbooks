@@ -1,0 +1,11 @@
+
+- name: Deploy Argo application
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('file', app_location) | from_yaml }}"
+    kubeconfig: "{{ kubeconfig_file }}"
+  register: app_deploy
+  when: 'app_location is defined'
+
+
+

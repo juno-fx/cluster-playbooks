@@ -1,0 +1,1 @@
+ansible-playbook -v -e @orion_vars.yml -i inventory.yml setup_cluster.yml "$@"

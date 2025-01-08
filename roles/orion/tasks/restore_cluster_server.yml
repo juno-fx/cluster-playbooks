@@ -1,0 +1,48 @@
+- name: Check if k3s is installed on master node
+  ansible.builtin.command: which k3s
+  register: k3s_installed
+  failed_when: false
+  changed_when: false
+
+- name: Uninstall k3s on master node
+  ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+  register: k3s_master_uninstall
+  when: 
+    - k3s_force_reinstall | default(false) | bool
+    - k3s_installed.rc == 0
+  failed_when:
+    - '"No such file or directory" not in k3s_master_uninstall.msg'
+    - '"Cannot find device \"kube-ipvs0" not in k3s_master_uninstall.stderr'
+  changed_when:
+    - '"Cannot find device \"kube-ipvs0" not in k3s_master_uninstall.stderr'
+
+- name: Install k3s on master node
+  shell: >
+    curl -sfL https://get.k3s.io | sudo sh -s - server 
+    {{ k3s_install_args }}
+  register: master_install
+  failed_when: '"Starting k3s" not in master_install.stdout'
+  when: k3s_installed.rc != 0 or k3s_force_reinstall | default(false) | bool
+
+- name: Get k3s join token from master
+  shell: sudo cat /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+  
+- name: Fetch kubeconfig from master node
+  fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ k3s_kubeconfig_path }}"
+    flat: yes
+  become: true
+  
+- name: Replace 127.0.0.1 with current machine IP in kubeconfig
+  replace:
+    path: "{{ k3s_kubeconfig_path }}"
+    regexp: "https://127\\.0\\.0\\.1:6443"
+    replace: "https://{{ ansible_host }}:6443"
+  delegate_to: localhost
+  become: false
+
+- name: Set k3sup_token fact on master
+  set_fact:
+    k3sup_token: "{{ k3s_token.stdout }}"

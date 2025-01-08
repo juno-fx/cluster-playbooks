@@ -1,0 +1,1 @@
+ansible-playbook -v install_dependencies.yml "$@"

@@ -1,0 +1,10 @@
+---
+# Handlers for the orion role
+- name: Reboot system
+  reboot:
+
+- name: Restart Docker
+  systemd:
+    name: docker
+    state: restarted
+  ignore_errors: true

@@ -1,0 +1,19 @@
+# Restore the cluster server if fully restoring the cluster and the installation target is 'server'
+- name: Restore cluster server
+  import_tasks: restore_cluster_server.yml
+  when: 
+    - fully_restore_cluster | default(false) | bool
+    - k3s_installation_target == 'server'
+
+# Restore the cluster agent if fully restoring the cluster and the installation target is 'agent'
+- name: Restore cluster agent
+  import_tasks: restore_cluster_agent.yml
+  when: 
+    - fully_restore_cluster | default(false) | bool
+    - k3s_installation_target == 'agent'
+
+# Install the Docker repository if Docker registry credentials are provided
+- name: Install Docker repository
+  import_tasks: install_docker_repo.yml
+  when: docker_registry_username is defined and docker_registry_password is defined
+  delegate_to: localhost

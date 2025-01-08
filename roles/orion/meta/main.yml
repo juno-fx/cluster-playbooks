@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: donald@redmond.ai
+  description: Orion Cluster Supporting Infrastructure Deployment
+  company: JunoFX
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: EL  # Enterprise Linux
+      versions:
+        - all
+    - name: Debian 
+      versions:
+        - all
+  galaxy_tags: ['JunoFX', 'Orion', 'VFX']
+
+dependencies: []
