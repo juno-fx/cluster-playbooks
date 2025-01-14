@@ -8,7 +8,9 @@ The Orion role is responsible for setting up and managing the JunoFX Orion Clust
 ## Requirements
 
 ### System Requirements
-- Ubuntu 20.04 or later
+- Linux
+  - Ubuntu 20.04 or later
+  - RHEL 7 or later
 - Minimum 4 CPU cores
 - 8GB RAM minimum (16GB recommended for GPU nodes)
 - For GPU nodes: NVIDIA GPU with compatible drivers
